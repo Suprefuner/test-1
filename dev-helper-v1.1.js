@@ -1,4 +1,5 @@
-  const caid = "#rlcid-content-testing-page-two"
+<script>
+  const caid = "#main .open-html-content:has(.rlc-creative_v3)"
   const rlHelperPos = {
     x: 0,
     y: 0
@@ -506,3 +507,4 @@
     $('*:has(>.rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) .rlc-dek)) > .rlc-ab-container').show()
     isShowingFont = true
   }
+</script>
