@@ -1,4 +1,3 @@
-
   const caid = "#rlcid-content-testing-page-two"
   const rlHelperPos = {
     x: 0,
@@ -20,9 +19,11 @@
 
   // using 'load' event instead of 'document ready' to make sure the font family is the final render one
   window.addEventListener('load', function () {
-    helperInit()
-    helperButtonInit()
-    bindEvent()
+    setTimeout(() => {  
+      helperInit()
+      helperButtonInit()
+      bindEvent()
+    }, 1500)
   })
 
   function helperInit() {
@@ -117,8 +118,7 @@
                     background-color: #041e3a;
                 }
                 .rlc-ab-container {
-                    max-width: 500px;
-                    min-width: 240px;
+                    width: clamp(240px, 100%, 500px);
                     height: max-content;
                     padding: 10px;  
 
@@ -153,7 +153,7 @@
                 }
 
                 .rlc-slide .rlc-ab-container{
-                    max-width: 200px;
+                    max-width: var(--_max-width, 200px);
                 }
 
                 .rlc-ab-container * {
@@ -171,7 +171,7 @@
 
                 .rlc-hotspot .rlc-ab-container{
                     top: 20px;
-                    left: 100px;
+                    left: 20px;
                     transform: unset;
                 }
 
@@ -186,11 +186,11 @@
                   right: 20px;
                 }
 
-                :where(.rlc-copygroup, .rlc-textgroup, .rlc-intro) > .rlc-ab-container {
+                :where(.rlc-copygroup, .rlc-textgroup, .rlc-intro, .rlc-textgroup-in) > .rlc-ab-container {
                     transform: translate(-50%, -12px);
                 }
 
-                :where(.rlc-copygroup, .rlc-textgroup, .rlc-intro).rlc-all-text-left > .rlc-ab-container{
+                :where(.rlc-copygroup, .rlc-textgroup, .rlc-intro, .rlc-textgroup-in):where(.rlc-all-text-left, .rlc-desktop-text-left, .rlc-mobile-text-left) > .rlc-ab-container{
                   transform: translate(0, -12px);
                   left: 0;
                 }
@@ -235,11 +235,15 @@
         addPositionToEl(group)
 
         let additionalCSS = 'style="'
-        if($(group).height() >= $(window).height() * 0.5){
+        if($(group).closest('.rlc-slide').length){
+          additionalCSS += `--_max-width: ${$(group).closest('.rlc-slide').eq(0).css('width')};`
+        }
+
+        if ($(group).height() >= $(group).closest('article').height() * 0.35) {
           additionalCSS += 'top: 50%;'
         }
 
-        if($(container).closest('.rlc-padding').length){
+        if ($(container).closest('.rlc-padding').length) {
           additionalCSS += `margin-bottom: -${$(group).css('padding-top')};`
         }
 
@@ -250,8 +254,8 @@
     })
 
     $(`
-      ${caid} .rlc-title:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) .rlc-title),
-      ${caid} .rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) .rlc-dek)
+      ${caid} .rlc-title:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) > .rlc-title),
+      ${caid} .rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) > .rlc-dek)
     `).each((i, el) => {
       let html = ''
       const parent = $(el).parent()
@@ -361,21 +365,23 @@
   }
 
   function generateCTAABContainer() {
-      $(".rlc-links, .rlc-copygroup, .rlc-textgroup").each((i, linksContainer) => {
-        const isTooManyLinks = checkTooManyLinks(linksContainer)
+    $(".rlc-links, .rlc-copygroup, .rlc-textgroup").each((i, linksContainer) => {
+      if($(linksContainer).find('.rlc-ab-container').length) return
 
-        // if .rlc-links contains >= 3 CTA 
-        if (isTooManyLinks) {
-          let html = ""
-          let CTAFont = ""
-          $(linksContainer).find(".rlc-pillbutton, .rlc-linecta, .rlc-target, a").each((i, el) => {
-            const fontFamily = getFontFamily(el)
-            const isSameFont = CTAFont === fontFamily
-            if (!isSameFont) {
-              CTAFont = fontFamily
-            }
+      const isTooManyLinks = checkTooManyLinks(linksContainer)
 
-            html += `
+      // if .rlc-links contains >= 3 CTA 
+      if (isTooManyLinks) {
+        let html = ""
+        let CTAFont = ""
+        $(linksContainer).find(".rlc-pillbutton, .rlc-linecta, .rlc-target, a").each((i, el) => {
+          const fontFamily = getFontFamily(el)
+          const isSameFont = CTAFont === fontFamily
+          if (!isSameFont) {
+            CTAFont = fontFamily
+          }
+
+          html += `
                         ${$(el).text()}: <br>
                         ${!isSameFont ? getFontFamily(el) + ": <br>" : ""}
                         --------------------------<br>
@@ -383,28 +389,28 @@
                         ${getAB(el)} <br>
                         --------------------------<br>
                     `
-          })
+        })
 
-          addPositionToEl(linksContainer)
-          addZIndexToCarousel(linksContainer)
-          $(linksContainer).append(createABContainer(html))
-          return
-        }
+        addPositionToEl(linksContainer)
+        addZIndexToCarousel(linksContainer)
+        $(linksContainer).append(createABContainer(html))
+        return
+      }
 
-        // .rlc-links contains < 3 CTA
-        $(linksContainer).find(".rlc-pillbutton, .rlc-linecta, .rlc-target, a").each((i, el) => {
-          addPositionToEl(el)
-          addZIndexToCarousel(el)
-          $(el).append(createABContainer(`
+      // .rlc-links contains < 3 CTA
+      $(linksContainer).find(".rlc-pillbutton, .rlc-linecta, .rlc-target, a").each((i, el) => {
+        addPositionToEl(el)
+        addZIndexToCarousel(el)
+        $(el).append(createABContainer(`
                     font: <br>
                     ${getFontFamily(el)}: <br>
                     --------------------------<br>
                     AB: <br>
                     ${getAB(el)}
                 `))
-        })
       })
-    }
+    })
+  }
 
   function createABContainer(ab, attr = "") {
     return `
@@ -424,7 +430,6 @@
   function getAB(el) {
     return !$(el).is("a") || !el.href.includes('?')
       ? ""
-      // : el.href.split("?").slice(1)[0].replaceAll("ab=", "")
       : el.href.split("com")[1]
   }
 
@@ -489,15 +494,15 @@
   }
 
   function hideFont() {
-    $(':where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) > .rlc-ab-container').hide()
-    $('*:has(>.rlc-title:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) .rlc-title)) > .rlc-ab-container').hide()
-    $('*:has(>.rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) .rlc-dek)) > .rlc-ab-container').hide()
+    $(':where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) > .rlc-ab-container').hide()
+    $('*:has(>.rlc-title:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) .rlc-title)) > .rlc-ab-container').hide()
+    $('*:has(>.rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) .rlc-dek)) > .rlc-ab-container').hide()
     isShowingFont = false
   }
 
   function showFont() {
-    $(':where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) > .rlc-ab-container').show()
-    $('*:has(>.rlc-title:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) .rlc-title)) > .rlc-ab-container').show()
-    $('*:has(>.rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd) .rlc-dek)) > .rlc-ab-container').show()
+    $(':where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) > .rlc-ab-container').show()
+    $('*:has(>.rlc-title:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) .rlc-title)) > .rlc-ab-container').show()
+    $('*:has(>.rlc-dek:not(:where(.rlc-copygroup, .rlc-textgroup, .rlc-textgroup-in, .rlc-intro, .rlc-catslider-hd, .rlc-inner-catslider-hd) .rlc-dek)) > .rlc-ab-container').show()
     isShowingFont = true
   }
